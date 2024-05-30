@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import { firestore } from '../Firebase'; 
-import { collection, addDoc } from "firebase/firestore";
+import { firestore } from '../Firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
 
-const HomeScreen = ({navigation}) => {
+const AccessScreen = () => {
   const [name, setName] = useState('');
   const [matricule, setMatricule] = useState('');
+  const navigation = useNavigation();
 
-  const handleAddUser = async () => {
+  const handleLogin = async () => {
     try {
-      const userRef = await addDoc(collection(firestore, "usersdb"), {
-        name,
-        matricule,
-      });
-      console.log("Document written with ID: ", userRef.id);
-      alert('User added to Firestore successfully!');
-      setMatricule('')
-      setName('')
+      const usersCollection = collection(firestore, 'usersdb');
+      const q = query(usersCollection, where('name', '==', name), where('matricule', '==', matricule));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        navigation.navigate('WelcomeScreen', {name});
+        console.log("Login Successful")
+      } else {
+        Alert.alert('Error', 'Invalid name or matricule.');
+      }
     } catch (error) {
-      console.error('Error adding user to Firestore:', error);
+      console.error('Error checking user credentials:', error);
     }
   };
 
@@ -37,20 +41,9 @@ const HomeScreen = ({navigation}) => {
         onChangeText={text => setMatricule(text)}
       />
       <Button
-        title="Add"
-        onPress={handleAddUser}
+        title="Login"
+        onPress={handleLogin}
       />
-
-<Button
-        title="View Users"
-        onPress={()=>  navigation.navigate('ViewDataScreen')}
-      />
-
-<Button
-        title="Access"
-        onPress={()=>  navigation.navigate('AccessScreen')}
-      />
-
     </View>
   );
 };
@@ -61,7 +54,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 20,
-   
   },
   input: {
     width: '100%',
@@ -73,4 +65,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default AccessScreen;
